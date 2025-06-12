@@ -22,3 +22,12 @@
         const archiveListEl = document.getElementById('archive-list');
         const toastEl = document.getElementById('toast-notification');
         const toastMessageEl = document.getElementById('toast-message');
+
+        let transactions = JSON.parse(localStorage.getItem('transactions_sm')) || [];
+        let archives = JSON.parse(localStorage.getItem('archives_sm')) || [];
+        let financeChart;
+
+        const categories = {
+            revenue: ['Salário', 'Freelance', 'Vendas', 'Investimentos', 'Outros'],
+            expense: ['Moradia', 'Alimentação', 'Transporte', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Outros']
+        };
