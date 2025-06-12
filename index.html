@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Money - Gestor Financeiro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles for a light theme */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6; /* bg-gray-100 */
+        }
+        .card {
+            background-color: #FFFFFF; /* bg-white */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .form-input {
+            background-color: #F9FAFB; /* bg-gray-50 */
+            border: 1px solid #D1D5DB; /* border-gray-300 */
+            color: #111827; /* text-gray-900 */
+        }
+        .btn-primary {
+            background-color: #2563EB; /* bg-blue-600 */
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #1D4ED8; /* hover:bg-blue-700 */
+        }
+        .btn-secondary {
+            background-color: #4B5563; /* bg-gray-600 */
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #1F2937;
+        }
+        .transaction-item {
+            border-left-width: 4px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            background-color: #F9FAFB;
+            border-radius: 0.375rem;
+            border: 1px solid #E5E7EB;
+        }
+        .transaction-revenue { border-left-color: #22C55E; }
+        .transaction-expense { border-left-color: #EF4444; }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        #toast-notification {
+            transition: opacity 0.5s, transform 0.5s;
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        #toast-notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <div class="flex justify-center items-center gap-4">
+                <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#22C55E"/>
+                    <path d="M35 75L35 25L50 25C58.2843 25 65 31.7157 65 40C65 48.2843 58.2843 55 50 55L45 55M55 45L70 45C74.1421 45 78 48.8579 78 53.5C78 58.1421 74.1421 62 70 62L60 62" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Smart Money</h1>
+            </div>
+        </header>
+
+        <!-- Filters -->
+        <section class="card mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="start-date" class="block text-sm font-medium text-gray-700">Data Início</label>
+                    <input type="date" id="start-date" class="form-input mt-1 block w-full rounded-md p-2">
+                </div>
+                <div>
+                    <label for="end-date" class="block text-sm font-medium text-gray-700">Data Fim</label>
+                    <input type="date" id="end-date" class="form-input mt-1 block w-full rounded-md p-2">
+                </div>
+                <div class="flex gap-2">
+                    <button id="filter-btn" class="btn-primary w-full font-bold py-2 px-4 rounded-md"><i class="fas fa-filter mr-2"></i>Filtrar</button>
+                    <button id="clear-filter-btn" class="btn-secondary w-full font-bold py-2 px-4 rounded-md"><i class="fas fa-times mr-2"></i>Limpar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Cards -->
+        <section id="dashboard" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="card card-hover flex items-center"><div class="bg-green-500/10 p-3 rounded-full mr-4"><i class="fa-solid fa-arrow-up text-green-500 text-2xl"></i></div><div><h2 class="text-gray-500 text-sm">Receita (Período)</h2><p id="total-revenue" class="text-2xl font-semibold text-green-600">R$ 0,00</p></div></div>
+            <div class="card card-hover flex items-center"><div class="bg-red-500/10 p-3 rounded-full mr-4"><i class="fa-solid fa-arrow-down text-red-500 text-2xl"></i></div><div><h2 class="text-gray-500 text-sm">Despesa (Período)</h2><p id="total-expense" class="text-2xl font-semibold text-red-600">R$ 0,00</p></div></div>
+            <div class="card card-hover flex items-center"><div class="bg-blue-600/10 p-3 rounded-full mr-4"><i class="fa-solid fa-scale-balanced text-blue-600 text-2xl"></i></div><div><h2 class="text-gray-500 text-sm">Saldo Líquido</h2><p id="net-balance" class="text-2xl font-semibold text-blue-700">R$ 0,00</p></div></div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
+            <div class="lg:col-span-2">
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-900">Adicionar Transação</h3>
+                    <form id="transaction-form" class="space-y-4">
+                        <input type="text" id="description" placeholder="Descrição" class="form-input w-full p-2 rounded-md" required>
+                        <input type="text" id="amount" placeholder="R$ 0,00" class="form-input w-full p-2 rounded-md" required>
+                        <select id="type" class="form-input w-full p-2 rounded-md"><option value="revenue">Receita</option><option value="expense">Despesa</option></select>
+                        <select id="category" class="form-input w-full p-2 rounded-md"></select>
+                        <input type="date" id="date" class="form-input w-full p-2 rounded-md" required>
+                        <button type="submit" class="btn-primary w-full font-bold py-3 px-4 rounded-md"><i class="fa-solid fa-plus mr-2"></i>Adicionar</button>
+                    </form>
+                </div>
+            </div>
+            <div class="lg:col-span-3 card">
+                 <h3 class="text-xl font-semibold mb-4 text-gray-900">Relatório Financeiro (Período)</h3>
+                 <div class="relative h-48 md:h-64 mb-6"><canvas id="finance-chart"></canvas></div>
+                 <hr class="my-4">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Maiores Fontes de Receita</h4>
+                        <ul id="top-revenue-sources" class="space-y-2"></ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Maiores Despesas</h4>
+                        <ul id="top-expense-sources" class="space-y-2"></ul>
+                    </div>
+                 </div>
+            </div>
+        </main>
+        
+        <!-- Transaction History -->
+        <section id="history" class="card">
+             <h3 class="text-xl font-semibold mb-4 text-gray-900">Histórico de Transações (Período)</h3>
+             <div id="transaction-list" class="space-y-2 max-h-96 overflow-y-auto pr-2"></div>
+        </section>
+    </div>
+    
+    <!-- Floating Action Buttons -->
+    <div id="floating-actions" class="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+        <button id="close-month-btn" class="btn-primary w-48 font-bold py-3 px-4 rounded-lg shadow-lg flex items-center justify-center"><i class="fas fa-calendar-check mr-2"></i>Fechar Mês</button>
+        <button id="archive-btn" class="btn-secondary w-48 font-bold py-3 px-4 rounded-lg shadow-lg flex items-center justify-center"><i class="fas fa-archive mr-2"></i>Histórico</button>
+    </div>
+
+    <!-- Archive Modal -->
+    <div id="archive-modal" class="fixed inset-0 modal-overlay z-50 items-center justify-center hidden">
+        <div class="card w-11/12 md:w-2/3 lg:w-1/2 max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-900">Histórico de Fechamentos</h3>
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            <div id="archive-list" class="flex-grow overflow-y-auto pr-2"></div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed top-8 right-8 p-4 rounded-lg shadow-lg text-white z-50">
+        <p id="toast-message"></p>
+    </div>
+</body>
+</html>
